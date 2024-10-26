@@ -1,13 +1,19 @@
 let triangs
 const N = 5
 const impactRadius = 200
-const fact = 75
+const fact = 100
 let resetting = false
 let resetPos = []
 let resetRot = []
 let startPos = []
 const resetFrames = 120
 let frameAtReset
+let params = new URLSearchParams(document.location.search);
+let secret = parseInt(params.get("secret"), 10);
+let debug = params.get("debug") != null
+if (debug) console.log(secret)
+const empty = false
+const BACKGROUND = 0
 
 function setup() {
 	new Canvas(window.innerWidth, window.innerHeight);
@@ -23,7 +29,8 @@ function setup_() {
 	resetRot = []
 	startPos = []
 	for (let i = 0; i < triangs.length; ++i) {
-		triangs[i].fill = 255
+		triangs[i].fill = BACKGROUND
+		if (!empty) triangs[i].fill = 255
 		triangs[i].stroke = 255
 		triangs[i].static = true
 		triangs[i].rotationLock = false
@@ -34,7 +41,7 @@ function setup_() {
 }
 
 function draw() {
-	background(0)
+	background(BACKGROUND)
 
 	if (resetting) {
 		let t = 1.0 * (frameCount-1-frameAtReset) / resetFrames
@@ -51,27 +58,37 @@ function draw() {
 				triangs[i].rotation = rot
 				triangs[i].pos.x = x
 				triangs[i].pos.y = y
-				if (t == 0) console.log(x, y)
+				if (debug && t == 0) console.log(x, y)
 			}
 		}
 	}
 
-	else if (keyboard.presses()) {
+	if (secret == 1) {
 		for (let i = 0; i < triangs.length; ++i) {
-			//console.log(triangs[i].pos.x, triangs[i].pos.y)
+			let p = 1.0 * triangs[i].pos.x / width
+			let myColor = HSVtoRGB(p, 1, 1)
+			triangs[i].fill = BACKGROUND
+			if (!empty) triangs[i].fill = color(myColor.r, myColor.g, myColor.b)
+			triangs[i].stroke = color(myColor.r, myColor.g, myColor.b)
 		}
-		reset()
-		console.log(resetPos)
 	}
 
-	else if (mouse.presses()) {
+	if (keyboard.presses()) {
+		for (let i = 0; i < triangs.length; ++i) {
+			if (debug) console.log(triangs[i].pos.x, triangs[i].pos.y)
+		}
+		reset()
+		if (debug) console.log(resetPos)
+	}
+
+	if (mouse.presses()) {
 		for (let i = 0; i < triangs.length; ++i) {
 			triangs[i].static = false
 			const x = triangs[i].pos.x
 			const y = triangs[i].pos.y
 			const vectorLength = dist(mouseX, mouseY, x, y)
 			const diff = easeOutSine(constrain(map(vectorLength, 0, impactRadius, 1, 0), 0, 1))
-			//if (diff > 0) console.log(i)
+			if (debug && diff > 0) console.log(i)
 			triangs[i].applyForce(fact*diff*(x-mouseX)/vectorLength, fact*diff*(y-mouseY)/vectorLength)//, {mouseX, mouseY})
 		}
 	}
@@ -88,7 +105,7 @@ function reset() {
 	if (!resetting) {
 		resetting = true
 		for (let i = 0; i < triangs.length; ++i) {
-			console.log("X:", startPos[2*i], triangs[i].pos.x, "Y:", startPos[2*i+1], triangs[i].pos.y)
+			if (debug) console.log("X:", startPos[2*i], triangs[i].pos.x, "Y:", startPos[2*i+1], triangs[i].pos.y)
 			resetPos.push(triangs[i].pos.x)
 			resetPos.push(triangs[i].pos.y)
 			resetRot.push(triangs[i].rotation)
@@ -123,4 +140,34 @@ function easeOutSine(p) {
 
 function resetAnim (p) {
 	return -0.5 * Math.cos(Math.PI * p) + 0.5 
+}
+
+/* accepts parameters
+ * h  Object = {h:x, s:y, v:z}
+ * OR 
+ * h, s, v
+*/
+function HSVtoRGB(h, s, v) {
+    var r, g, b, i, f, p, q, t;
+    if (arguments.length === 1) {
+        s = h.s, v = h.v, h = h.h;
+    }
+    i = Math.floor(h * 6);
+    f = h * 6 - i;
+    p = v * (1 - s);
+    q = v * (1 - f * s);
+    t = v * (1 - (1 - f) * s);
+    switch (i % 6) {
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+    }
+    return {
+        r: Math.round(r * 255),
+        g: Math.round(g * 255),
+        b: Math.round(b * 255)
+    };
 }
