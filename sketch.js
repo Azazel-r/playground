@@ -34,7 +34,8 @@ function setup_() {
 		triangs[i].stroke = 255
 		triangs[i].static = true
 		triangs[i].rotationLock = false
-		triangs[i].rotationDrag = 0
+		triangs[i].rotationDrag = 0.25
+		triangs[i].drag = 0.25
 		startPos.push(triangs[i].pos.x)
 		startPos.push(triangs[i].pos.y)
 	}
@@ -67,6 +68,17 @@ function draw() {
 		for (let i = 0; i < triangs.length; ++i) {
 			let p = 1.0 * triangs[i].pos.x / width
 			let myColor = HSVtoRGB(p, 1, 1)
+			triangs[i].fill = BACKGROUND
+			if (!empty) triangs[i].fill = color(myColor.r, myColor.g, myColor.b)
+			triangs[i].stroke = color(myColor.r, myColor.g, myColor.b)
+		}
+	}
+
+	if (secret == 2) {
+		for (let i = 0; i < triangs.length; ++i) {
+			let mySpeed = dist(0, 0, triangs[i].vel.x, triangs[i].vel.y)
+			let p = constrain(map(mySpeed, 0, 5, 0, 1), 0, 1)
+			let myColor = p > 0.5 ? HSVtoRGB(map(p, 1, 0.5, 1, 2.0/3), 1, 1) : HSVtoRGB(2.0/3, map(p, 0.5, 0, 1, 0), 1)
 			triangs[i].fill = BACKGROUND
 			if (!empty) triangs[i].fill = color(myColor.r, myColor.g, myColor.b)
 			triangs[i].stroke = color(myColor.r, myColor.g, myColor.b)
